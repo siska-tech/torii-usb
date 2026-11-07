@@ -1,6 +1,6 @@
 # Implementation audit
 
-**Reviewed:** 2026-11-07  
+**Reviewed:** 2026-11-07
 **Scope:** repository at the Audit / Test Baseline change. The latest recorded
 Onza CDC session is prior hardware evidence; the board was not connected during
 this source audit. No keyboard or physical UART test is claimed.
