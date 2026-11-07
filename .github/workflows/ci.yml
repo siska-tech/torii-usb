@@ -1,0 +1,36 @@
+name: C protocol tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  protocol-tests:
+    name: Protocol tests (${{ matrix.mode }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: debug
+            cflags: ""
+            ldflags: ""
+          - mode: address-undefined-sanitizers
+            cflags: "-fsanitize=address,undefined -fno-omit-frame-pointer"
+            ldflags: "-fsanitize=address,undefined"
+    env:
+      CFLAGS: ${{ matrix.cflags }}
+      LDFLAGS: ${{ matrix.ldflags }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build/host -DCMAKE_BUILD_TYPE=Debug
+      - name: Build
+        run: cmake --build build/host --parallel
+      - name: Test
+        run: ctest --test-dir build/host --output-on-failure

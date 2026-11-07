@@ -118,7 +118,8 @@ place.
 See [docs/architecture.md](docs/architecture.md),
 [docs/compatibility.md](docs/compatibility.md), and
 [docs/hardware.md](docs/hardware.md) for design rationale and validation
-criteria.
+criteria. The source-based implementation audit and prioritized next steps
+are in [docs/audit.md](docs/audit.md).
 
 ## License
 
