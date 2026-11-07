@@ -1,0 +1,2 @@
+add_library(torii_host_decoder INTERFACE)
+target_link_libraries(torii_host_decoder INTERFACE torii_protocol)
