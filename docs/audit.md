@@ -1,9 +1,8 @@
 # Implementation audit
 
-**Reviewed:** 2026-11-07
-**Scope:** repository at the Audit / Test Baseline change. The latest recorded
-Onza CDC session is prior hardware evidence; the board was not connected during
-this source audit. No keyboard or physical UART test is claimed.
+**Reviewed:** 2026-11-08
+**Scope:** source audit plus a bounded live PC diagnostic capture. No keyboard
+or binary UART test is claimed.
 
 ## Maturity summary
 
@@ -20,8 +19,8 @@ this source audit. No keyboard or physical UART test is claimed.
 | UART protocol core | Implemented and software-tested | Version 1 uses COBS, CRC-16/CCITT-FALSE, delimiter resynchronization, a 16-bit sequence, and complete keyboard snapshots in [`protocol.c`](../firmware/src/protocol.c) and [`protocol.md`](protocol.md). `tests/protocol_test.c` covers CRC vectors, round trips, malformed frames, resynchronization, state diffs, sequence gaps/wrap, rollover, and expiry. |
 | UART hardware transport | Implemented but unverified | UART0 GP0/GP1 at 115200 8N1 with a bounded 7-packet usable queue is in [`uart_transport.c`](../firmware/src/uart_transport.c). The service writes only while the FIFO is ready, and queue overflow is counted. No physical UART receiver, saturation test, or throughput/latency measurement is recorded. |
 | Loss/disconnect recovery | Implemented in protocol core; hardware-unverified | Keyboard snapshots repeat every 250 ms; disconnect emits a lifecycle frame; the C host API applies sequence gaps and supports timeout clearing. Unit tests cover the host state logic. Firmware queue behavior and physical unplug/reconnect are not tested. A press and release wholly lost during a stall cannot be reconstructed. |
-| Host-side C API | Implemented and software-tested | The portable CMake target wraps the protocol core. The decoder/state API is tested on PC and has no KAGURA dependency. There is no UART platform adapter or runnable serial example yet. |
-| CI | Missing before this change | This change adds host protocol tests in normal and Address/UndefinedBehavior Sanitizer configurations. Firmware cross-compilation is not yet part of CI. |
+| Host-side C API and PC monitor | Implemented and software-tested | The portable CMake target wraps the protocol core. The C decoder/state API is tested on PC. [`torii_debug.py`](../host/python/torii_debug.py) adds a Python serial monitor; parser/state tests run on PC. A binary UART hardware capture still needs a 3.3 V adapter. |
+| CI | Implemented for software tests | The preceding Audit / Test Baseline change added C protocol tests in normal and Address/UndefinedBehavior Sanitizer configurations. This follow-up adds the Python monitor tests. Firmware cross-compilation is not yet part of CI. |
 | Hardware and electrical design | Proposal only; unverified | [`hardware.md`](hardware.md) and [`breadboard-wiring.md`](breadboard-wiring.md) describe GP6/GP7 USB data, GP0/GP1 UART, series resistors, and a protected VBUS supply concept. No released schematic/BOM, measured power path, reverse-current test, ESD validation, or signal-integrity evidence exists. Do not treat the proposal as a verified circuit. |
 
 ## Known gaps and risks
@@ -47,23 +46,29 @@ this source audit. No keyboard or physical UART test is claimed.
   verification blockers. No USB 5 V is sourced from RP2040 GPIO.
 - The development USB CDC descriptor uses VID/PID `CAFE:4001`; this is not a
   production VID/PID assignment.
+- A bounded five-second capture through the PC tool's explicit CDC mode
+  displayed 247 changed Onza input-report diagnostic lines. This confirms
+  live CDC reading and report visibility only; it is not a keyboard test,
+  binary UART capture, or Xbox control interpretation.
 
 ## Recommended PR sequence
 
-1. **Audit / Test Baseline (this PR):** record verified scope and add PC
-   protocol CI without changing the protocol ABI.
-2. **USB Keyboard E2E:** run the existing boot-keyboard path with a physical
+1. **Audit / Test Baseline:** implemented in the preceding Draft PR; record
+   verified scope and run portable protocol tests in CI.
+2. **PC UART Debug Tool (this PR):** inspect binary UART frames and CDC
+   diagnostics, with parser/state tests; no protocol ABI change.
+3. **USB Keyboard E2E:** run the existing boot-keyboard path with a physical
    keyboard and capture both CDC state and GP0 UART frames; fix only issues
    demonstrated by that test.
-3. **UART Reliability:** factor transport behavior for host testing; test
+4. **UART Reliability:** factor transport behavior for host testing; test
    ordering, saturation/drop reporting, state snapshots, and recovery.
-4. **Disconnect / Recovery:** validate repeated physical reconnect and add
+5. **Disconnect / Recovery:** validate repeated physical reconnect and add
    measured diagnostics for USB lifecycle and transfer errors.
-5. **Mouse Support:** define and test normalized mouse reports separately
+6. **Mouse Support:** define and test normalized mouse reports separately
    from the keyboard snapshot.
-6. **Gamepad Separation:** keep vendor-specific adapters isolated; analyze
+7. **Gamepad Separation:** keep vendor-specific adapters isolated; analyze
    real Onza report changes before defining parsed Xbox events.
-7. **Hardware / OSS readiness:** freeze a protected schematic/BOM only after
+8. **Hardware / OSS readiness:** freeze a protected schematic/BOM only after
    part selection and electrical verification; add platform transport
    examples and reproducible flashing steps.
 
