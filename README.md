@@ -102,6 +102,9 @@ power both the board and keyboard. For the wiring details, follow the
 [breadboard wiring diagram](docs/breadboard-wiring.md). Do not plug in a
 keyboard until the VBUS current limit and reverse-current protection are in
 place.
+For PC-side UART frame inspection, see the
+[Python debug tool](host/python/README.md). It requires a 3.3 V USB-UART
+adapter on GP0/TX; the native USB-C COM port is CDC diagnostics, not UART data.
 
 ## Roadmap
 
